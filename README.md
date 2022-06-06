@@ -2,15 +2,15 @@
 
 ### Introduction - MultiVault Extension
 
-Extends ERC4626 original functions with a minimal addition to the original interface. Copies ERC4626 architectual approach to the standarization of single Vaults onto MultiVault design. Introduces ERC1155 as LP (shares) managment token and a tool for embedding multiple ERC4626 underlying(s) within one MultiVault contract. Provides high modularity with encoded `vaultData` variable, presented through sample implementation in `MultiCore.sol`, allowing for each `vaultId` to have it's own modules, additional interfaces or metadata. Keeps easy to extend by inheritance interface.
+MultiVault extends original ERC4626 functions with minimal additions to the original interface. The ERC4626 architectual approach to the standarization of single Vaults is translated onto a MultiVault design by introducing ERC1155 as LP (shares) managment token and as a tool for embedding multiple ERC4626 underlying(s) within one MultiVault contract. This contract maintains high modularity with an encoded `vaultData` variable, presented through sample implementation in `MultiCore.sol`, allowing for each `vaultId` to have it's own modules, additional interfaces or metadata. This is easy to extend through an inheritable interface.
 
 ### Rationale
 
-ERC4626 is operating only on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, needed to be redeployed for each new underlying asset and it's accounting logic. Additionally, often requested and found in-the-wild, not provided by ERC4626 feature, is ability to operate on multiple assets with separate accounting still within single Vault contract. ERC4626 standard can itself be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance.
+ERC4626 currently only operates on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, and needs to be redeployed for each new underlying asset and it's accounting logic. Often requested functionality is the ability to operate on multiple assets with separate accounting still within single Vault contract. The ERC4626 standard was designed to be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance, as we have done in this repository.
 
-However, arguments for potential standardized extension exist. Found reccuring patterns hold true across many non-4626 Vaults and can be accomodated with small logical changes to the existing ERC4626 interface while still keeping extension intuitive for developers already working with ERC4626. To that, we demonstrate alpha version of `MultiCore.sol` implementation contract, utilizing our proposed `MultiVault.sol` extension of the ERC4626.
+Despite this underlying flexibility, arguments for a potential standardized extension exist. Found reccuring patterns hold true across many non-4626 Vaults and can be accomodated with small logical changes to the existing ERC4626 interface while still keeping extension intuitive for developers already working with ERC4626. To that, we demonstrate alpha version of `MultiCore.sol` implementation contract, utilizing our proposed `MultiVault.sol` extension of the ERC4626.
 
-Currently multiple underlying tokens standarization within single ERC4626 vault is an object of on-going research for most uniform proposition (refer to `research` directory). For the time being we present prototype of potential extension to the ERC4626 focused on accounting operations within single contract for multiple Vault assets.
+The standardization of multiple underlying tokens within a single ERC4626 vault is an object of on-going research for most uniform proposition (refer to `research` directory). For the time being we present prototype of potential extension to the ERC4626 focused on accounting operations within single contract for multiple Vault assets.
 
 ### Changes to ERC4626:
 
@@ -49,7 +49,7 @@ Three most common features of multi assets/shares Vaults abstracted to minimal e
    - Each VaultId (ERC1155 id) has its own separate underlying balance
    - Only 1 type of share minted per id, single underlying allowed per id, each underlying follows its own logic (separate totalAssets())
 2. `MultiUnderlyingVault.sol` (More than 1 token used as underlying asset)
-   - Base underlying follows EIP4626 completly. Other underlying (here, _funding_) has it's own accounting logic. However, calculations depend on balances of all underlyings.
+   - Base underlying follows EIP4626 completely. Other underlying (here, _funding_) has it's own accounting logic. However, calculations depend on balances of all underlyings.
    - Single ERC20 as LP-token (share)
    - Each underlying has it's own separate balance, but operates within single vault
    - totalAssets should return balance of ALL underlying
