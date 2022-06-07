@@ -95,11 +95,6 @@ describe("MultiVault extension", async () => {
     });
   });
 
-  describe("Deposit<>Withdraw", async () => {
-    const amountToDeposit = getBigNumber(133);
-    const preDepositBalance = await ERC20.balanceOf(deployer.address);
-  });
-
   describe("vaultData Testing", async () => {
     it("previewData()", async () => {
       expect(await MultiCore.previewData(1)).to.be.equal(vaultData);
