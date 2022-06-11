@@ -4,26 +4,20 @@ pragma solidity >=0.8.1;
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {MultiVault} from "./MultiVault.sol";
 
-/// Sample interface extending ERC20. Implementation specific
+/// Sample interface extending ERC20. Implementation specific.
 import {MockInterface} from "./mock/MockInterface.sol";
 
 /// @notice MultiVault is an extension of the ERC4626, Tokenized Vault Standard
-/// Allows for storage of multiple separate ERC4626 assets with their own accounting and logic
-/// Allows custom modules, interfaces or metadata for each tracked id
+/// Storage of multiple separate ERC4626 Vaults functionality inside of the MultiCore
+/// Allows custom modules, interfaces or metadata for Vault
 contract MultiCore is MultiVault {
-
+    
     /*///////////////////////////////////////////////////////////////
                         USING MULTIVAULT INTERFACE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Example implementation with URI metadata decoded from created vaultData.
-    function uri(uint256 vaultId) public view override returns (string memory) {
-        (string memory _uri, ) = abi.decode(vaults[vaultId].vaultData, (string, address));
-        return _uri;
-    }
-
     /// @notice Shows balance of given vaultId. Same as standard ERC4626 but with selector.
-    /// @dev Only sample implementation. In interface still virtual.
+    /// @dev Suggested minimal implementation
     function totalAssets(uint256 vaultId) public view override returns (uint256) {
         return vaults[vaultId].asset.balanceOf(address(this));
     }
@@ -36,9 +30,11 @@ contract MultiCore is MultiVault {
         return super.create(asset, vaultData);
     }
 
-    /// @dev MUST return bytes data for internal use of MultiVault contract. Decode data in child.
-    function previewData(uint256 vaultId) public view override returns (bytes memory) {
-        return super.previewData(vaultId);
+    /// @notice Example implementation with URI metadata decoded from created vaultData.
+    /// @dev Suggested implementation. Demonstrates utility of bytes vaultData variable.
+    function uri(uint256 vaultId) public view override returns (string memory) {
+        (string memory _uri, ) = abi.decode(vaults[vaultId].vaultData, (string, address));
+        return _uri;
     }
 
     /// @notice Hook, same as ERC4626
@@ -49,7 +45,7 @@ contract MultiCore is MultiVault {
         uint256 shares
     ) internal override {
         /// @dev Suggested usage of vaultData
-        bytes memory vaultData = previewData(vaultId);
+        bytes memory vaultData = vaults[vaultId].vaultData;
     }
 
     /// @notice Hook, same as ERC4626
@@ -59,7 +55,13 @@ contract MultiCore is MultiVault {
         uint256 assets,
         uint256 shares
     ) internal override {
-        bytes memory vaultData = previewData(vaultId);
+        bytes memory vaultData = vaults[vaultId].vaultData;
+    }
+
+    /// @notice Visbility getter for vaultData variable across multiple Vaults
+    /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
+    function previewData(uint256 vaultId) public view returns (string memory, address) {
+        return abi.decode(vaults[vaultId].vaultData, (string, address));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -69,7 +71,7 @@ contract MultiCore is MultiVault {
 
     /// @notice Call vaultData earlier specified interface
     function useData(uint256 vaultId) public {
-        (, address token) = readData((vaultId));
+        (, address token) = previewData((vaultId));
         MockInterface _token = MockInterface(token);
         _token.mint(address(this), 1e18);
     }
@@ -77,10 +79,5 @@ contract MultiCore is MultiVault {
     /// @notice Change vaultData for given vaultId
     function setData(uint256 vaultId, bytes memory vaultData) public {
         vaults[vaultId].vaultData = vaultData;
-    }
-
-    /// @dev MultiVault should operate only on bytes data. Here, function is provided for readability
-    function readData(uint256 vaultId) public view returns (string memory, address) {
-        return abi.decode(vaults[vaultId].vaultData, (string, address));
     }
 }

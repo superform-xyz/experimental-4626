@@ -97,7 +97,7 @@ describe("MultiVault extension", async () => {
 
   describe("vaultData Testing", async () => {
     it("previewData()", async () => {
-      expect(await MultiCore.previewData(1)).to.be.equal(vaultData);
+      expect(await MultiCore.previewData(1)).to.deep.equal(["https://erc4626.info", ERC20.address]);
     });
 
     it("uri()", async () => {

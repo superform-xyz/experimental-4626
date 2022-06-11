@@ -33,11 +33,11 @@ Three reccuring patterns for all currently researched multiVaults, warranting on
 
 1. Reccuring `uint256 indexOfAssets` variable for any sort of id tracking. True for underlying assets, shares, supplies & balances or even whole Vaults (ERC1155 MultiVault)
 2. Reccuring pattern of addition of another token interface through initialization in existing contract - `create()` function
-3. Reccuring pattern of creation of separate accounting calculations for some type of assets/shares - `fund()`, `defund()` and it's `previewFund/Defund()` functions. *WORK IN PROGRESS - fund/defund logic will most likley be an extension itself*
+3. Reccuring pattern of creation of separate accounting calculations for some type of assets/shares - `fund()`, `defund()` and it's `previewFund/Defund()` functions. _WORK IN PROGRESS - fund/defund logic will most likley be an extension itself_
 
 # Contracts
 
-Repository is divided into _research_ part, found inside `/contracts/research`. Those contracts were used to study potential design patterns for MultiVault extension. The effect of those explorations is found in `core` and only `core` contracts should be considered as MultiVault valid implementations. At the same time _research contracts_ are expected to serve a role of a demonstration on how developers could possibly use ERC4626 outside of *classic DeFi* yield bearing vault.
+Repository is divided into _research_ part, found inside `/contracts/research`. Those contracts were used to study potential design patterns for MultiVault extension. The effect of those explorations is found in `core` and only `core` contracts should be considered as MultiVault valid implementations. At the same time _research contracts_ are expected to serve a role of a demonstration on how developers could possibly use ERC4626 outside of _classic DeFi_ yield bearing vault.
 
 ## Research Contracts
 

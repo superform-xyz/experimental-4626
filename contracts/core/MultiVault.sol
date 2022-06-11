@@ -70,12 +70,10 @@ abstract contract MultiVault is ERC1155 {
         emit Create(asset, id);
     }
 
-    /// @notice Get enocoded bytes vaultData
-    /// @param vaultId exisiting vaultId
-    /// @dev MUST return bytes data for internal use of MultiVault contract. Decode data in child.
-    function previewData(uint256 vaultId) public view virtual returns (bytes memory vaultData) {
-        return vaults[vaultId].vaultData;
-    }
+    /// @notice Visbility getter for vaultData variable across multiple Vaults
+    /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
+    /// MUST define its own return values if implemented. MultiVault can work internaly on bytes data fine.
+    // function previewData(uint256 vaultId) public view virtual returns();
 
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC
