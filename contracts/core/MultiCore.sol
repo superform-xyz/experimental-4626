@@ -11,6 +11,7 @@ import {MockInterface} from "./mock/MockInterface.sol";
 /// Storage of multiple separate ERC4626 Vaults functionality inside of the MultiCore
 /// Allows custom modules, interfaces or metadata for Vault
 contract MultiCore is MultiVault {
+    
     /*///////////////////////////////////////////////////////////////
                         USING MULTIVAULT INTERFACE LOGIC
     //////////////////////////////////////////////////////////////*/
@@ -29,13 +30,6 @@ contract MultiCore is MultiVault {
         return super.create(asset, vaultData);
     }
 
-    /// @notice Getter for vaultData variable across multiple Vaults.
-    /// @dev MUST return bytes data for internal use of MultiVault contract.
-    /// See readData() for readable data
-    function previewData(uint256 vaultId) public view override returns (bytes memory) {
-        return super.previewData(vaultId);
-    }
-
     /// @notice Example implementation with URI metadata decoded from created vaultData.
     /// @dev Suggested implementation. Demonstrates utility of bytes vaultData variable.
     function uri(uint256 vaultId) public view override returns (string memory) {
@@ -51,7 +45,7 @@ contract MultiCore is MultiVault {
         uint256 shares
     ) internal override {
         /// @dev Suggested usage of vaultData
-        bytes memory vaultData = previewData(vaultId);
+        bytes memory vaultData = vaults[vaultId].vaultData;
     }
 
     /// @notice Hook, same as ERC4626
@@ -61,7 +55,13 @@ contract MultiCore is MultiVault {
         uint256 assets,
         uint256 shares
     ) internal override {
-        bytes memory vaultData = previewData(vaultId);
+        bytes memory vaultData = vaults[vaultId].vaultData;
+    }
+
+    /// @notice Visbility getter for vaultData variable across multiple Vaults
+    /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
+    function previewData(uint256 vaultId) public view returns (string memory, address) {
+        return abi.decode(vaults[vaultId].vaultData, (string, address));
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -69,15 +69,9 @@ contract MultiCore is MultiVault {
                Utilizing inherited MultiVault functionality
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev MultiVault should operate only on bytes data. Function is provided for readability.
-    /// May be updated to the interface. Deployer obviously knows vaultData arguments, readData would provide it for caller.
-    function readData(uint256 vaultId) public view returns (string memory, address) {
-        return abi.decode(vaults[vaultId].vaultData, (string, address));
-    }
-
     /// @notice Call vaultData earlier specified interface
     function useData(uint256 vaultId) public {
-        (, address token) = readData((vaultId));
+        (, address token) = previewData((vaultId));
         MockInterface _token = MockInterface(token);
         _token.mint(address(this), 1e18);
     }
