@@ -4,26 +4,19 @@ pragma solidity >=0.8.1;
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {MultiVault} from "./MultiVault.sol";
 
-/// Sample interface extending ERC20. Implementation specific
+/// Sample interface extending ERC20. Implementation specific.
 import {MockInterface} from "./mock/MockInterface.sol";
 
 /// @notice MultiVault is an extension of the ERC4626, Tokenized Vault Standard
-/// Allows for storage of multiple separate ERC4626 assets with their own accounting and logic
-/// Allows custom modules, interfaces or metadata for each tracked id
+/// Storage of multiple separate ERC4626 Vaults functionality inside of the MultiCore
+/// Allows custom modules, interfaces or metadata for Vault
 contract MultiCore is MultiVault {
-
     /*///////////////////////////////////////////////////////////////
                         USING MULTIVAULT INTERFACE LOGIC
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice Example implementation with URI metadata decoded from created vaultData.
-    function uri(uint256 vaultId) public view override returns (string memory) {
-        (string memory _uri, ) = abi.decode(vaults[vaultId].vaultData, (string, address));
-        return _uri;
-    }
-
     /// @notice Shows balance of given vaultId. Same as standard ERC4626 but with selector.
-    /// @dev Only sample implementation. In interface still virtual.
+    /// @dev Suggested minimal implementation
     function totalAssets(uint256 vaultId) public view override returns (uint256) {
         return vaults[vaultId].asset.balanceOf(address(this));
     }
@@ -36,9 +29,18 @@ contract MultiCore is MultiVault {
         return super.create(asset, vaultData);
     }
 
-    /// @dev MUST return bytes data for internal use of MultiVault contract. Decode data in child.
+    /// @notice Getter for vaultData variable across multiple Vaults.
+    /// @dev MUST return bytes data for internal use of MultiVault contract.
+    /// See readData() for readable data
     function previewData(uint256 vaultId) public view override returns (bytes memory) {
         return super.previewData(vaultId);
+    }
+
+    /// @notice Example implementation with URI metadata decoded from created vaultData.
+    /// @dev Suggested implementation. Demonstrates utility of bytes vaultData variable.
+    function uri(uint256 vaultId) public view override returns (string memory) {
+        (string memory _uri, ) = abi.decode(vaults[vaultId].vaultData, (string, address));
+        return _uri;
     }
 
     /// @notice Hook, same as ERC4626
@@ -67,6 +69,12 @@ contract MultiCore is MultiVault {
                Utilizing inherited MultiVault functionality
     //////////////////////////////////////////////////////////////*/
 
+    /// @dev MultiVault should operate only on bytes data. Function is provided for readability.
+    /// May be updated to the interface. Deployer obviously knows vaultData arguments, readData would provide it for caller.
+    function readData(uint256 vaultId) public view returns (string memory, address) {
+        return abi.decode(vaults[vaultId].vaultData, (string, address));
+    }
+
     /// @notice Call vaultData earlier specified interface
     function useData(uint256 vaultId) public {
         (, address token) = readData((vaultId));
@@ -77,10 +85,5 @@ contract MultiCore is MultiVault {
     /// @notice Change vaultData for given vaultId
     function setData(uint256 vaultId, bytes memory vaultData) public {
         vaults[vaultId].vaultData = vaultData;
-    }
-
-    /// @dev MultiVault should operate only on bytes data. Here, function is provided for readability
-    function readData(uint256 vaultId) public view returns (string memory, address) {
-        return abi.decode(vaults[vaultId].vaultData, (string, address));
     }
 }
