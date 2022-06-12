@@ -105,7 +105,7 @@ describe("MultiVault extension", async () => {
     });
 
     it("useData()", async () => {
-      await MultiCore.useData(1);
+      await MultiCore.callData(1);
     });
   });
 });
