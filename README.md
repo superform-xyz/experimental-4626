@@ -37,7 +37,7 @@ Three reccuring patterns for all currently researched multiVaults, warranting on
 
 # Contracts
 
-Repository is divided into _research_ part, found inside `/contracts/research`. Those contracts were used to study potential design patterns for MultiVault extension. The effect of those explorations is found in `core` and only `core` contracts should be considered as MultiVault valid implementations. At the same time _research contracts_ are expected to serve a role of a demonstration on how developers could possibly use ERC4626 outside of _classic DeFi_ yield bearing vault.
+Repository is divided into _research_ part, found inside `/contracts/research`. Those contracts were used to study potential design patterns for MultiVault extension. The effect of those explorations is found in the root directory and here contracts should be considered MultiVault valid implementation. At the same time _research contracts_ are expected to serve a role of a demonstration on how developers could possibly use ERC4626 outside of _classic DeFi_ yield bearing vault.
 
 ## Research Contracts
 
