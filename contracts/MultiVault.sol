@@ -26,7 +26,7 @@ abstract contract MultiVault is ERC1155 {
         uint256 shares
     );
 
-    event Create(ERC20 indexed asset, uint256 id);
+    event Create(ERC20 indexed asset, uint256 id, bytes vaultData);
 
     /*///////////////////////////////////////////////////////////////
                                  STORAGE
@@ -67,7 +67,7 @@ abstract contract MultiVault is ERC1155 {
         /// (rewards, fees, metadata) = abi.decode(data, ([RewardsModule, FeeModule, string]))
         vaults[id].vaultData = vaultData;
 
-        emit Create(asset, id);
+        emit Create(asset, id, vaultData);
     }
 
     /// @notice Visbility getter for vaultData variable across multiple Vaults
