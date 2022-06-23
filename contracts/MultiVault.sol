@@ -3,6 +3,7 @@ pragma solidity >=0.8.1;
 
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {ERC1155} from "@rari-capital/solmate/src/tokens/ERC1155.sol";
+import {ERC4626} from "@rari-capital/solmate/src/mixins/ERC4626.sol";
 import {SafeTransferLib} from "@rari-capital/solmate/src/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@rari-capital/solmate/src/utils/FixedPointMathLib.sol";
 
@@ -35,7 +36,7 @@ abstract contract MultiVault is ERC1155 {
     /// @notice Vault id tracking and total supply of different Vaults
     uint256 public totalSupply;
 
-    /// @notice Track vault underlying assets
+    /// @notice Multiple vault underlying assets
     mapping(uint256 => Vault) public vaults;
 
     /// @notice Vault Data
@@ -48,14 +49,15 @@ abstract contract MultiVault is ERC1155 {
         bytes vaultData;
     }
 
+
     /*///////////////////////////////////////////////////////////////
                             MULTIVAULT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Create new Vault
-    /// @param asset underlying token of new vault
+    /// @param asset underlying token for new vault
     /// @param vaultData any encoded additional data for vault eg. metadata uri string
-    /// @dev encoded data can be anything. implementations of other functions will need to know how to decode tho.
+    /// @dev encoded data can be anything. however, implementations of other functions will need to know how to decode it.
     function create(ERC20 asset, bytes memory vaultData) public virtual returns (uint256 id) {
         unchecked {
             id = ++totalSupply;
@@ -70,10 +72,11 @@ abstract contract MultiVault is ERC1155 {
         emit Create(asset, id, vaultData);
     }
 
-    /// @notice Visbility getter for vaultData variable across multiple Vaults
+    /// @notice Getter for vaultData variable across multiple Vaults
     /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
-    /// MUST define its own return values if implemented. MultiVault can work internaly on bytes data fine.
-    // function previewData(uint256 vaultId) public view virtual returns();
+    function previewData(uint256 vaultId) public view virtual returns(Vault memory v) {
+        return vaults[vaultId];
+    }
 
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC

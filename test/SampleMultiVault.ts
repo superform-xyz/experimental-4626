@@ -12,20 +12,15 @@ async function getBigNumber(amount: number, decimals = 18) {
   return BigNumber.from(amount).mul(BigNumber.from(10).pow(decimals));
 }
 
-describe("MultiVault extension", async () => {
+describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async () => {
   let deployer: SignerWithAddress;
-  let MultiCore: Contract;
+  let SampleMultiVault: Contract;
   let ERC20: Contract;
   let ERC4626Vault: Contract;
   let vaultData: any;
-  // let Flywheel: Contract;
 
-  before("deploy multicore and utils", async () => {
+  before("deploy infra and utils", async () => {
     [deployer] = await ethers.getSigners();
-
-    const MultiCoreFactory = await ethers.getContractFactory("MultiCore");
-    MultiCore = await MultiCoreFactory.deploy();
-    await MultiCore.deployed();
 
     const ERC20Factory = await ethers.getContractFactory("MockToken");
     ERC20 = await ERC20Factory.deploy("ERC20Token", "ERC20", 18);
@@ -38,39 +33,45 @@ describe("MultiVault extension", async () => {
       "ERC4626"
     );
     await ERC4626Vault.deployed();
-
-    await ERC20.mint(deployer.address, getBigNumber(1000));
-    await ERC20.approve(MultiCore.address, getBigNumber(1000));
-
     vaultData = ethers.utils.defaultAbiCoder.encode(
       ["string", "address"],
       ["https://erc4626.info", ERC20.address]
     );
 
-    await MultiCore.create(ERC20.address, vaultData);
+    const SampleMultiVaultFactory = await ethers.getContractFactory("SampleMultiVault");
+    SampleMultiVault = await SampleMultiVaultFactory.deploy();
+    await SampleMultiVault.deployed();
+
+    /// We create first vaultId on runtime, create now can be thoroughly tested elsewhere
+    // await SampleMultiVault.create(ERC20.address, vaultData);
+
+    await ERC20.mint(deployer.address, getBigNumber(1000));
+    await ERC20.approve(SampleMultiVault.address, getBigNumber(1000));
+    await SampleMultiVault.create(ERC20.address, vaultData);
+
   });
 
   describe("Base Tests", async () => {
     it("deposit() vaultId 1", async () => {
-      await MultiCore.deposit(1, getBigNumber(100), deployer.address);
+      await SampleMultiVault.deposit(1, getBigNumber(100), deployer.address);
     });
 
     it("previewDeposit()", async () => {
-      const val = await MultiCore.previewDeposit(1, getBigNumber(100));
+      const val = await SampleMultiVault.previewDeposit(1, getBigNumber(100));
       // console.log("previewDeposit val", val);
     });
 
     it("mint() vaultId 1", async () => {
-      await MultiCore.mint(1, getBigNumber(100), deployer.address);
+      await SampleMultiVault.mint(1, getBigNumber(100), deployer.address);
     });
 
     it("previewMint()", async () => {
-      const val = await MultiCore.previewMint(1, getBigNumber(100));
+      const val = await SampleMultiVault.previewMint(1, getBigNumber(100));
       // console.log("previewMint val", val);
     });
 
     it("withdraw() vaultId 1", async () => {
-      await MultiCore.withdraw(
+      await SampleMultiVault.withdraw(
         1,
         getBigNumber(100),
         deployer.address,
@@ -79,33 +80,33 @@ describe("MultiVault extension", async () => {
     });
 
     it("previewWithdraw()", async () => {
-      const val = await MultiCore.previewWithdraw(1, getBigNumber(100));
+      const val = await SampleMultiVault.previewWithdraw(1, getBigNumber(100));
       // console.log("previewWithdraw val", val);
     });
 
     it("redeem() vaultId 1", async () => {
-      const shares = await MultiCore.balanceOf(deployer.address, 1);
+      const shares = await SampleMultiVault.balanceOf(deployer.address, 1);
       // console.log("remaining lp tokens", shares);
-      await MultiCore.redeem(1, shares, deployer.address, deployer.address);
+      await SampleMultiVault.redeem(1, shares, deployer.address, deployer.address);
     });
 
     it("previewRedeem()", async () => {
-      const val = await MultiCore.previewRedeem(1, getBigNumber(100));
+      const val = await SampleMultiVault.previewRedeem(1, getBigNumber(100));
       // console.log("previewRedeem val", val);
     });
   });
 
-  describe("vaultData Testing", async () => {
-    it("previewData()", async () => {
-      expect(await MultiCore.previewData(1)).to.deep.equal(["https://erc4626.info", ERC20.address]);
-    });
+  // describe("vaultData Testing", async () => {
+  //   it("printData()", async () => {
+  //     expect(await SampleMultiVault.previewData(1)).to.deep.equal(["https://erc4626.info", ERC20.address]);
+  //   });
 
-    it("uri()", async () => {
-      expect(await MultiCore.uri(1)).to.be.equal("https://erc4626.info");
-    });
+  //   it("uri()", async () => {
+  //     expect(await SampleMultiVault.uri(1)).to.be.equal("https://erc4626.info");
+  //   });
 
-    it("useData()", async () => {
-      await MultiCore.callData(1);
-    });
-  });
+  //   it("useData()", async () => {
+  //     await SampleMultiVault.callData(1);
+  //   });
+  // });
 });

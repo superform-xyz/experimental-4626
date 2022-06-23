@@ -6,7 +6,7 @@ MultiVault extends original ERC4626 functions with minimal additions to the orig
 
 ### Rationale
 
-ERC4626 currently only operates on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, and needs to be redeployed for each new underlying asset and it's accounting logic. Often requested functionality is the ability to operate on multiple assets with separate accounting still within single Vault contract. The ERC4626 standard was designed to be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance, as we have done in this repository.
+ERC4626 currently only operates on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, and needs to be redeployed for each new underlying asset and it's accounting logic. Often requested functionality is the ability to operate on multiple assets with separate accounting still within single Vault contract. The ERC4626 standard was designed to be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance allowing for quick extending.
 
 Despite this underlying flexibility, arguments for a potential standardized extension exist. Found reccuring patterns hold true across many non-4626 Vaults and can be accomodated with small logical changes to the existing ERC4626 interface while still keeping extension intuitive for developers already working with ERC4626. To that, we demonstrate alpha version of `MultiCore.sol` implementation contract, utilizing our proposed `MultiVault.sol` extension of the ERC4626.
 
@@ -22,10 +22,29 @@ The standardization of multiple underlying tokens within a single ERC4626 vault 
     - `vaultData` is expected to be used internally and freely by implementation logic.
 - `create(ERC20 asset, uin256 vaultData)` function to add new vault within core vault contract
 - `previewData(uint256 vaultId)` function for reading decoded vaultData (check usage in `MultiVault.sol`)
-  - can be implemented freely as long as it's returning appropriate `bytes data`. implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_. example implementation is `uri()` functions, reading metadata url from `vaultData` variable.
+  - implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_. example implementation is `uri()` functions, reading metadata url from `vaultData` variable.
   - parent contract can extend this logic as it sees fit. e.g `setData()`. those functions should not be a part of extension. interface assumes that each vault has data, empty state may just be omitted.
 
-_Disclaimer: Super WIP. Exploratory work and designs_
+_Disclaimer: WIP. Exploratory work and designs_
+
+### Use cases
+
+0. Batch focused testing + Curve integration testing
+
+1. Yearn-like aggregator in single token with built-in rewards
+
+- Using ERC1155 for managment of multiple Vaults, each with separate yield generating strategy
+- Cutting approve costs through batching. Approve only MultiVault, get access to all Vaults.
+- Re-stake your ALL positions (ERC1155 ids) and get a reward calculated from ALL positions
+- Custom and separate logic executed for yield generation in `afterDeposit()`
+
+2. Long/Short Vault for multiple collaterals?
+
+### Differences between create Vault and add Vault
+
+If pseudo-Vault is created through the additional ERC20 asset, MultiVault is a received of all asset balance and minter of one ERC1155-type share (denominated by ids)
+
+If real-Vault is added, MultiVault acts as a router to it and receiver of LP-share from such.
 
 ## Common Patterns
 
@@ -88,13 +107,13 @@ MultiVaults can opt for few different ways of managing `assets`. This slight cha
     mapping(uint256 => FundingToken) public _assets;
 ```
 
-# Advanced Sample Hardhat Project
+# Install
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+`npm install`
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
+`npx hardhat test`
 
-Try running some of the following tasks:
+Example tasks:
 
 ```shell
 npx hardhat accounts
@@ -114,23 +133,3 @@ npx prettier '**/*.{json,sol,md}' --write
 npx solhint 'contracts/**/*.sol'
 npx solhint 'contracts/**/*.sol' --fix
 ```
-
-# Etherscan verification
-
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
-
-In this project, copy the .env.example file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
-
-```shell
-hardhat run --network ropsten scripts/deploy.ts
-```
-
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
-
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
-```
-
-# Performance optimizations
-
-For faster runs of your tests and scripts, consider skipping ts-node's type checking by setting the environment variable `TS_NODE_TRANSPILE_ONLY` to `1` in hardhat's environment. For more details see [the documentation](https://hardhat.org/guides/typescript.html#performance-optimizations).

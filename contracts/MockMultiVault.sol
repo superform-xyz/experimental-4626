@@ -4,13 +4,15 @@ pragma solidity >=0.8.1;
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {MultiVault} from "./MultiVault.sol";
 
-/// Sample interface extending ERC20. Implementation specific.
-import {MockInterface} from "./mock/MockInterface.sol";
-
 /// @notice MultiVault is an extension of the ERC4626, Tokenized Vault Standard
 /// Storage of multiple separate ERC4626 Vaults functionality inside of the MultiCore
 /// Allows custom modules, interfaces or metadata for Vault
-contract MultiCore is MultiVault {
+contract MockMultiVault is MultiVault {
+
+    /// @notice Init first vault. Not neccessary as contract is abstract, but good practice.
+    constructor(ERC20 asset, bytes memory vaultData) {
+        create(asset, vaultData);
+    }
     
     /*///////////////////////////////////////////////////////////////
                         MULTIVAULT INTERFACE LOGIC
@@ -25,26 +27,24 @@ contract MultiCore is MultiVault {
     /// @notice Example implementation with URI metadata decoded from created vaultData.
     /// @dev Suggested implementation. Demonstrates utility of bytes vaultData variable.
     function uri(uint256 vaultId) public view override returns (string memory) {
-        (string memory _uri, ) = abi.decode(vaults[vaultId].vaultData, (string, address));
+        (string memory _uri, ) = printData(vaultId);
         return _uri;
     }
 
     /// @notice Visbility getter for vaultData variable across multiple Vaults
     /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
-    function previewData(uint256 vaultId) public view returns (string memory, address) {
-        return abi.decode(vaults[vaultId].vaultData, (string, address));
+    function printData(uint256 vaultId) internal view returns (string memory, address) {
+        Vault memory v = previewData(vaultId);
+        return abi.decode(v.vaultData, (string, address));
     }
 
-    /*///////////////////////////////////////////////////////////////
-                        PARENT CONTRACT FUNCTIONS
-               Utilizing inherited MultiVault functionality
-    //////////////////////////////////////////////////////////////*/
-
-    /// @notice Call vaultData earlier specified interface
-    function callData(uint256 vaultId) public {
-        (, address token) = previewData((vaultId));
-        MockInterface _token = MockInterface(token);
-        _token.mint(address(this), 1e18);
+    function afterDeposit(
+        uint256 vaultId,
+        uint256 assets,
+        uint256 shares
+    ) internal override {
+        Vault memory v = previewData(vaultId);  
     }
+
 
 }
