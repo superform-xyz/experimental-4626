@@ -12,7 +12,7 @@ async function getBigNumber(amount: number, decimals = 18) {
   return BigNumber.from(amount).mul(BigNumber.from(10).pow(decimals));
 }
 
-describe("MultiVault extension", async () => {
+describe("Testing core MultiVault Extension", async () => {
   let deployer: SignerWithAddress;
   let MockMultiVault: Contract;
   let ERC20: Contract;
@@ -49,6 +49,13 @@ describe("MultiVault extension", async () => {
 
     /// Create should get another test. We deploy first vault on runtime
     // await MockMultiVault.create(ERC20.address, vaultData);
+  });
+
+  describe("vaultData Testing", async () => {
+    it("printData()", async () => {
+
+    });
+
   });
 
 });

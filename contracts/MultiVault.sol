@@ -27,7 +27,7 @@ abstract contract MultiVault is ERC1155 {
         uint256 shares
     );
 
-    event Create(ERC20 indexed asset, uint256 id, bytes vaultData);
+    event Create(ERC20 indexed asset, uint256 id);
 
     /*///////////////////////////////////////////////////////////////
                                  STORAGE
@@ -42,40 +42,28 @@ abstract contract MultiVault is ERC1155 {
     /// @notice Vault Data
     /// @param asset underlying token of this vaultId
     /// @param totalSupply shares tracking for each vaultId, needed for previews()
-    /// @param vaultData additional logic to this vaultId, extend
+    /// @param vaultData EXPERIMENTAL: additional logic to this vaultId, encoded parameters for the Vault
     struct Vault {
         ERC20 asset;
         uint256 totalSupply;
         bytes vaultData;
     }
 
-
     /*///////////////////////////////////////////////////////////////
                             MULTIVAULT LOGIC
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Create new Vault
-    /// @param asset underlying token for new vault
-    /// @param vaultData any encoded additional data for vault eg. metadata uri string
-    /// @dev encoded data can be anything. however, implementations of other functions will need to know how to decode it.
-    function create(ERC20 asset, bytes memory vaultData) public virtual returns (uint256 id) {
+    /// @param asset new underlying token for vaultId
+    /// Can we make it as any type of underlying?
+    function create(ERC20 asset) public virtual returns (uint256 id) {
         unchecked {
             id = ++totalSupply;
         }
 
         vaults[id].asset = asset;
 
-        /// @dev Structure of this encoded data is left to the child contract, can be anything
-        /// (rewards, fees, metadata) = abi.decode(data, ([RewardsModule, FeeModule, string]))
-        vaults[id].vaultData = vaultData;
-
-        emit Create(asset, id, vaultData);
-    }
-
-    /// @notice Getter for vaultData variable across multiple Vaults
-    /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
-    function previewData(uint256 vaultId) public view virtual returns(Vault memory v) {
-        return vaults[vaultId];
+        emit Create(asset, id);
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -93,7 +81,7 @@ abstract contract MultiVault is ERC1155 {
 
         vault.asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, vaultId, shares, vaults[vaultId].vaultData);
+        _mint(receiver, vaultId, shares, "");
 
         vaults[vaultId].totalSupply += shares;
 
@@ -113,7 +101,7 @@ abstract contract MultiVault is ERC1155 {
 
         vault.asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, vaultId, shares, vaults[vaultId].vaultData);
+        _mint(receiver, vaultId, shares, "");
 
         vaults[vaultId].totalSupply += shares;
 

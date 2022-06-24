@@ -96,17 +96,17 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
     });
   });
 
-  // describe("vaultData Testing", async () => {
-  //   it("printData()", async () => {
-  //     expect(await SampleMultiVault.previewData(1)).to.deep.equal(["https://erc4626.info", ERC20.address]);
-  //   });
+  describe("vaultData Testing", async () => {
+    it("printData()", async () => {
+      console.log(await SampleMultiVault.previewData(1));
+    });
 
-  //   it("uri()", async () => {
-  //     expect(await SampleMultiVault.uri(1)).to.be.equal("https://erc4626.info");
-  //   });
+    it("uri()", async () => {
+      expect(await SampleMultiVault.uri(1)).to.be.equal("https://erc4626.info");
+    });
 
-  //   it("useData()", async () => {
-  //     await SampleMultiVault.callData(1);
-  //   });
-  // });
+    it("useData()", async () => {
+      await SampleMultiVault.callData(1);
+    });
+  });
 });

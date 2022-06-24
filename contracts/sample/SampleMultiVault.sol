@@ -2,10 +2,10 @@
 pragma solidity >=0.8.1;
 
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
-import {MultiVault} from "./MultiVault.sol";
+import {MultiVault} from "../MultiVault.sol";
 
 /// Sample interface extending ERC20. Implementation specific.
-import {MockInterface} from "./mock/MockInterface.sol";
+import {MockInterface} from "../mock/MockInterface.sol";
 
 /// @notice MultiVault is an extension of the ERC4626, Tokenized Vault Standard
 /// Storage of multiple separate ERC4626 Vaults functionality inside of the MultiCore

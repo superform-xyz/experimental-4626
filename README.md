@@ -27,25 +27,6 @@ The standardization of multiple underlying tokens within a single ERC4626 vault 
 
 _Disclaimer: WIP. Exploratory work and designs_
 
-### Use cases
-
-0. Batch focused testing + Curve integration testing
-
-1. Yearn-like aggregator in single token with built-in rewards
-
-- Using ERC1155 for managment of multiple Vaults, each with separate yield generating strategy
-- Cutting approve costs through batching. Approve only MultiVault, get access to all Vaults.
-- Re-stake your ALL positions (ERC1155 ids) and get a reward calculated from ALL positions
-- Custom and separate logic executed for yield generation in `afterDeposit()`
-
-2. Long/Short Vault for multiple collaterals?
-
-### Differences between create Vault and add Vault
-
-If pseudo-Vault is created through the additional ERC20 asset, MultiVault is a received of all asset balance and minter of one ERC1155-type share (denominated by ids)
-
-If real-Vault is added, MultiVault acts as a router to it and receiver of LP-share from such.
-
 ## Common Patterns
 
 Three reccuring patterns for all currently researched multiVaults, warranting one common interface:
@@ -53,59 +34,6 @@ Three reccuring patterns for all currently researched multiVaults, warranting on
 1. Reccuring `uint256 indexOfAssets` variable for any sort of id tracking. True for underlying assets, shares, supplies & balances or even whole Vaults (ERC1155 MultiVault)
 2. Reccuring pattern of addition of another token interface through initialization in existing contract - `create()` function
 3. Reccuring pattern of creation of separate accounting calculations for some type of assets/shares - `fund()`, `defund()` and it's `previewFund/Defund()` functions. _WORK IN PROGRESS - fund/defund logic will most likley be an extension itself_
-
-# Contracts
-
-Repository is divided into _research_ part, found inside `/contracts/research`. Those contracts were used to study potential design patterns for MultiVault extension. The effect of those explorations is found in the root directory and here contracts should be considered MultiVault valid implementation. At the same time _research contracts_ are expected to serve a role of a demonstration on how developers could possibly use ERC4626 outside of _classic DeFi_ yield bearing vault.
-
-## Research Contracts
-
-Three most common features of multi assets/shares Vaults abstracted to minimal examples presented in contracts described below.
-
-1. `MultiVault.sol` ERC1155 extension (Vault-portfolio extension)
-   - Changes EIP4626 interface, adds index to track LP-positions
-   - Single ERC1155 as LP-token, each id == different Vault accounting
-   - Each VaultId (ERC1155 id) has its own separate underlying balance
-   - Only 1 type of share minted per id, single underlying allowed per id, each underlying follows its own logic (separate totalAssets())
-2. `MultiUnderlyingVault.sol` (More than 1 token used as underlying asset)
-   - Base underlying follows EIP4626 completely. Other underlying (here, _funding_) has it's own accounting logic. However, calculations depend on balances of all underlyings.
-   - Single ERC20 as LP-token (share)
-   - Each underlying has it's own separate balance, but operates within single vault
-   - totalAssets should return balance of ALL underlying
-   - NOTE: This overlaps with `MultiSharesVault` in many aspects, but few.
-3. `MultiSharesVault.sol` (Stablecoins)
-   - Changes EIP4626 interface, adds index value to to keep track of types of accounting (not all deposits are equal)
-   - Single ERC20 as LP-token (unchanged)
-   - Only 1 underlying. Extension used to mint more than 1 type of share from Vault (ie. volmex volatility tokens)
-   - totalAssets will be different depending on type of share owned by user
-
-### Research - Assets logic
-
-MultiVaults can opt for few different ways of managing `assets`. This slight change is reflected through assets/shares accounting calculations proposed in standard implementation of ERC4626.
-
-1. MultiVault
-
-```javascript
-    mapping(uint256 => Vault) public vaults;
-
-    /// @dev Vault Data
-    struct Vault {
-        ERC20 underlying;
-        uint256 totalSupply;
-    }
-```
-
-2. MultiUnderlyingVault
-
-```javascript
-    mapping(uint256 => ERC20) public _assets;
-```
-
-3. MultiSharesVault
-
-```javascript
-    mapping(uint256 => FundingToken) public _assets;
-```
 
 # Install
 
