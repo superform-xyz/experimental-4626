@@ -2,13 +2,13 @@
 
 ### Introduction - MultiVault Extension
 
-MultiVault extends original ERC4626 functions with minimal additions to the original interface. The ERC4626 architectual approach to the standarization of single Vaults is translated onto a MultiVault design by introducing ERC1155 as LP (shares) managment token and as a tool for embedding multiple ERC4626 underlying(s) within one MultiVault contract. This contract maintains high modularity with an encoded `vaultData` variable, presented through sample implementation in `MultiCore.sol`, allowing for each `vaultId` to have it's own modules, additional interfaces or metadata.
+MultiVault extends original ERC4626 functions with minimal additions to the original interface. The ERC4626 architectual approach to the standarization of single Vaults is translated onto a MultiVault design by introducing ERC1155 as LP (shares) managment token and as a tool for embedding multiple ERC4626 underlying(s) within one MultiVault contract. This contract maintains high modularity with an encoded `vaultData` variable, presented through sample implementation in `MultiCore.sol`, allowing for each `vaultId` to have it's own modules, additional interfaces or metadata. Current sample implementation is suppose to demonstrate usage of `MultiVault.sol` interface for yield aggregator contract. **This repository is not proudction ready**
 
-Inspired by: https://github.com/z0r0z/MultiVault 
+Inspired by: https://github.com/z0r0z/MultiVault
 
 ### Rationale
 
-ERC4626 currently only operates on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, and needs to be redeployed for each new underlying asset with it's separate accounting logic. Often requested functionality is the ability to operate on multiple assets with separate accounting still within single Vault contract. The ERC4626 standard was designed to be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance allowing for quick extending. Despite this underlying flexibility, arguments for a potential standardized extension exist. 
+ERC4626 currently only operates on one underlying token, minting in return one ERC20 shares token, all within one - single - Vault contract, and needs to be redeployed for each new underlying asset with it's separate accounting logic. Often requested functionality is the ability to operate on multiple assets with separate accounting still within single Vault contract. The ERC4626 standard was designed to be inherited and overriden (and such is the expectation) through parent contracts, initialized by other contract or made to use as an instance allowing for quick extending. Despite this underlying flexibility, arguments for a potential standardized extension exist.
 
 Found reccuring patterns hold true across many non-4626 Vaults and can be accomodated with small logical changes to the existing ERC4626 interface while still keeping extension intuitive for developers already working with ERC4626. To that, we demonstrate alpha version of `MultiCore.sol` implementation contract, utilizing our proposed `MultiVault.sol` extension of the ERC4626.
 
@@ -24,10 +24,10 @@ The standardization of multiple underlying tokens within a single ERC4626 vault 
     - `vaultData` is expected to be used internally and freely by implementation logic.
 - `create(ERC20 asset)` function to add new vault within core vault contract
 - `previewData(uint256 vaultId)` optional function for reading decoded vaultData
-  - implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_. 
+  - implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_.
   - parent contract can extend this logic as it sees fit. interface assumes that each vault has data, empty state may just be omitted.
 
-_Disclaimer: Exploratory work and designs_
+_Disclaimer: Exploratory work and designs. Interface standarization is work in progress_
 
 ## Common Patterns
 
@@ -39,7 +39,16 @@ Three reccuring patterns for all currently researched multiVaults, warranting on
 
 ## Sample Implementation
 
-`MultiCore.sol` is an example implementation of inherited `MultiVault.sol` extension. It serves as a scaffold for multiple assets strategy manager contract (uff...). Accepts multiple underlying tokens and can route to multiple *Strategy* contracts (In sample implementation this are ERC4626 Vaults, free to be changed to Yearn-like `BaseStrategy`). It centralizes accounting and holds yield bearing assets under managment, effectivley becoming a MetaVault (Vault of Vaults).
+`MultiCore.sol` is an example implementation of inherited `MultiVault.sol` extension. It serves as a scaffold for multiple assets strategy manager contract (uff...). Accepts multiple underlying tokens and can route to multiple _Strategy_ contracts (In sample implementation this are ERC4626 Vaults, free to be changed to Yearn-like `BaseStrategy`). It centralizes accounting and holds yield bearing assets under managment, effectivley becoming a MetaVault (Vault of Vaults).
+
+Features:
+
+- Multiple underlying tokens accepted
+- Holds all LP position inside of one ERC1155 token
+  - Access to batch operations
+  - Index-like token for basket of shares
+- Manage multiple yield generating strategies for each vaultId
+- WIP: exchangeRate between MultiVault managed LP-shares
 
 # Install
 

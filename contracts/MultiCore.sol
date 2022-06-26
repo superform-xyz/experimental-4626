@@ -1,33 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.1;
 
-import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {MultiVault} from "./MultiVault.sol";
-import { IERC4626 } from "./interface/IERC4626.sol";
+import {IERC4626} from "./interface/IERC4626.sol";
+import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "@rari-capital/solmate/src/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@rari-capital/solmate/src/utils/FixedPointMathLib.sol";
 
-import "hardhat/console.sol";
+// import "hardhat/console.sol";
 
 /// @notice MultiVault is an extension of the ERC4626, Tokenized Vault Standard
 /// Allows additional underlying tokens to be managed by one Vault contract
-/// Strategy logic for each underlying is expected to be implemented per need
-/// MetaVaults - Yield Bearing Asset Manager
-/// Other impl: Strategy Manager (change vaultStrategy for anything, e.g Yearn BaseStrategy)
+/// Strategy logic for each underlying is expected to be implemented by child contract
+/// Sample implementation: MetaVaults - Yield Bearing Asset Manager
 contract MockMultiVault is MultiVault {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
-    /// @notice Vault id tracking and total supply of different Vaults
+    /// @notice vaultStrategy counter. Unique for each. Maps to vaultId when set()
     uint256 public strategyId;
 
-    /// @notice Maps to vaultId
+    /// @notice mapped to vaultId indirectly, yield generating strategy (ERC4626 here)
     mapping(uint256 => IERC4626) public vaultStrategy;
 
-    /// @notice Vote for approving Vault
+    /// @notice Access control over strategy managment and new underlying creation
     address public governance;
 
-    modifier onlyGov {
+    modifier onlyGov() {
         require(msg.sender == governance, "dao");
         _;
     }
@@ -40,21 +39,36 @@ contract MockMultiVault is MultiVault {
                             STRATEGY MANAGMENT
     //////////////////////////////////////////////////////////////*/
 
+    /// @notice Create new underlying token for MultiVault
+    /// @param asset address of new ERC20 underlying
     function create(ERC20 asset) public override onlyGov returns (uint256 id) {
         id = super.create(asset);
     }
 
+    /// @notice Add strategy to the multiVault. Here, ERC4626 standard yield bearing Vault
+    /// @param strategy address of ERC4626 strategy to which underlying will be moved
     function set(IERC4626 strategy) public onlyGov {
         ++strategyId;
         vaultStrategy[strategyId] = strategy;
     }
 
     /// @notice Activate strategyId for vaultId. Indirect mapping between stratId and vaultId.
+    /// Activate only if no funds require moving from the old Strategy. If they do, call move() first!
+    /// @param vaultId vaultId for which strategy is activated
+    /// @param stratId id of strategy for vault
     function activate(uint256 vaultId, uint256 stratId) public onlyGov {
         vaults[vaultId].vaultData = abi.encode(vaultStrategy[stratId]);
         vaults[vaultId].asset.approve(address(vaultStrategy[stratId]), type(uint256).max);
     }
 
+    function move(uint256 vaultId, uint256 newStrat) public onlyGov {
+        uint256 stratBalance = totalAssets(vaultId);
+        currentStrategy(vaultId).withdraw(stratBalance, address(this), address(this));
+        activate(vaultId, newStrat);
+        currentStrategy(vaultId).deposit(stratBalance, address(this));
+    }
+
+    /// @notice Check what strategy is active for vaultId
     function currentStrategy(uint256 vaultId) public view returns (IERC4626) {
         return abi.decode(vaults[vaultId].vaultData, (IERC4626));
     }
@@ -62,6 +76,10 @@ contract MockMultiVault is MultiVault {
     /*///////////////////////////////////////////////////////////////
                            METAVAULTS ROUTING
     //////////////////////////////////////////////////////////////*/
+
+    function batchDeposit(uint256[] memory vaultIds, uint256[] memory assets) public {}
+
+    function batchWithdraw(uint256[] memory vaultIds, uint256[] memory assets) public {}
 
     function afterDeposit(
         uint256 vaultId,
@@ -84,12 +102,12 @@ contract MockMultiVault is MultiVault {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Total amount of the underlying asset that is “managed” by vaultId.
-    /// @dev Synthethic value. MultiVault manages yield bearing LP, but owner wants asset
-    /// @dev previewReedem works because MultiVault is owner of strategy shares 
-    /// and owner of MultiVault shares is expecting to get underlying *accrued* value
+    /// @dev MultiVault manages shares of 3rd party Vaults, for accepted asset underlying from depositors.
+    /// previewReedem works because MultiVault is an owner of *Strategy* !shares!
+    /// and owner of MultiVault shares is expecting to get underlying *accrued* value (deposit+yield)
     function totalAssets(uint256 vaultId) public view override returns (uint256) {
         IERC4626 strategy = currentStrategy(vaultId);
-        uint256 shares = strategy.balanceOf(address(this)); // .this holds LP shares of strat
+        uint256 shares = strategy.balanceOf(address(this));
         return strategy.previewRedeem(shares); // convert shares to AUM by MultiVault
     }
 
@@ -122,11 +140,10 @@ contract MockMultiVault is MultiVault {
     }
 
     /*//////////////////////////////////////////////////////////////
-                                OTHERS
+                                OTHER
     //////////////////////////////////////////////////////////////*/
 
     function uri(uint256 vaultId) public view override returns (string memory) {
         return "https://show.metadata.for.vaultId/vaultId";
     }
-
-} 
+}

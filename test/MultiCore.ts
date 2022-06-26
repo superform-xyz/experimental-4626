@@ -25,7 +25,7 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
     const assetsFromShares = await SampleMultiVault.previewRedeem(1, shares);
     console.log("Preview redemption of MultiVault shares from underlying", ethers.utils.formatUnits(assetsFromShares))
     const assetsTotal = await SampleMultiVault.totalAssets(1);
-    console.log("MultiVault totalAssets (yield bearing tokens under mgmt)", ethers.utils.formatUnits(assetsTotal))
+    console.log("MultiVault totalAssets (4626 LP under mgmt)\n", ethers.utils.formatUnits(assetsTotal))
   }
 
   before("deploy infra and utils", async () => {
@@ -51,12 +51,9 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
     SampleMultiVault = await SampleMultiVaultFactory.deploy(deployer.address);
     await SampleMultiVault.deployed();
 
-    /// We create first vaultId on runtime, create now can be thoroughly tested elsewhere
-    // await SampleMultiVault.create(ERC20.address, vaultData);
-
     await ERC20.mint(deployer.address, getBigNumber(1000));
     await ERC20.approve(SampleMultiVault.address, getBigNumber(1000));
-    await ERC20.transfer(ERC4626Vault.address, getBigNumber(127));
+    await ERC20.transfer(ERC4626Vault.address, getBigNumber(10)); /// simulate yield
 
     await SampleMultiVault.create(ERC20.address);
     await SampleMultiVault.set(ERC4626Vault.address);
@@ -70,6 +67,8 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
       await SampleMultiVault.deposit(1, getBigNumber(100), deployer.address);
       const balanceOfShares = await SampleMultiVault.balanceOf(deployer.address, 1);
       expect(expectedShares).to.be.equal(balanceOfShares);
+      console.log("State of the Vault after deposit()\n");
+      await showMultiVaultAccounting();
     });
 
 
@@ -79,16 +78,8 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
       await SampleMultiVault.mint(1, expectedShares, deployer.address);
       const balanceOfSharesAfter = await SampleMultiVault.balanceOf(deployer.address, 1);
       expect(balanceOfSharesAfter).to.be.equal(balanceOfSharesBefore.add(expectedShares));
-    });
-
-    it("previewMint()", async () => {
-      const val = await SampleMultiVault.previewMint(1, getBigNumber(100));
-      // console.log("previewMint val", val);
-    });
-
-    it("previewDeposit()", async () => {
-      const val = await SampleMultiVault.previewDeposit(1, getBigNumber(100));
-      // console.log("previewDeposit val", val);
+      console.log("State of the Vault after mint()\n")
+       await showMultiVaultAccounting();
     });
   
     it("redeem() all from vaultId 1", async () => {
@@ -96,9 +87,11 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
       await SampleMultiVault.redeem(1, balanceOfShares, deployer.address, deployer.address);
       const balanceOfSharesAfter = await SampleMultiVault.balanceOf(deployer.address, 1);
       expect(balanceOfSharesAfter).to.be.equal(BigNumber.from(0));
+      console.log("State of the Vault after redeem()\n")
+      await showMultiVaultAccounting();
     });
 
-    it("withdraw() half of assets from vaultId 1", async () => {
+    it("withdraw() half of the assets from vaultId 1", async () => {
       const expectedShares = await SampleMultiVault.previewDeposit(1, getBigNumber(100));
       await SampleMultiVault.deposit(1, getBigNumber(100), deployer.address);
       const balanceOfShares = await SampleMultiVault.balanceOf(deployer.address, 1);
@@ -112,6 +105,18 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
       );
       const balanceOfSharesAfter = await SampleMultiVault.balanceOf(deployer.address, 1);
       expect(balanceOfSharesAfter).to.be.equal(balanceOfShares.sub(exchangedShares));
+      console.log("State of the Vault after withdraw()\n")
+      await showMultiVaultAccounting();
+    });
+
+    it("previewMint()", async () => {
+      const val = await SampleMultiVault.previewMint(1, getBigNumber(100));
+      // console.log("previewMint val", val);
+    });
+
+    it("previewDeposit()", async () => {
+      const val = await SampleMultiVault.previewDeposit(1, getBigNumber(100));
+      // console.log("previewDeposit val", val);
     });
 
     it("previewWithdraw()", async () => {
@@ -121,7 +126,7 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
 
     it("previewRedeem()", async () => {
       const val = await SampleMultiVault.previewRedeem(1, getBigNumber(100));
-      console.log("previewRedeem val", ethers.utils.formatUnits(val));
+      // console.log("previewRedeem val", ethers.utils.formatUnits(val));
     });
   });
 
@@ -130,6 +135,12 @@ describe("Testing Sample Implementation of MultiVault - Vault Aggregator", async
     it("gasTest single deposit()", async () => {
       await ERC20.approve(ERC4626Vault.address, getBigNumber(100))
       await ERC4626Vault.deposit(getBigNumber(100), deployer.address);
+      console.log("Compare direct deposit() to the vault:\n")
+      await showMultiVaultAccounting();
+      const expectedShares = await ERC4626Vault.previewMint(getBigNumber(100))
+      await SampleMultiVault.mint(1, expectedShares, deployer.address);
+      console.log("Compare direct mint() to the vault:\n")
+      await showMultiVaultAccounting();
     });
 
   });
