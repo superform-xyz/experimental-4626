@@ -20,8 +20,6 @@ The standardization of multiple underlying tokens within a single ERC4626 vault 
 - `totalSupply` of vaultIds (ERC1155 id)
 - separate operation logic for each underlying within one `MultiVault`
   - each `vaultId` has it's own underlying and additional data params (`vaultData` is suppose to be very flexible without breaking)
-    - `bytes vaultData` is intended to hold (string, interface, integer...) any data as long as decoding of its value is provided implementation interface for best readability
-    - `vaultData` is expected to be used internally and freely by implementation logic.
 - `create(ERC20 asset)` function to add new vault within core vault contract
 - `previewData(uint256 vaultId)` optional function for reading decoded vaultData
   - implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_.
@@ -36,6 +34,7 @@ Three reccuring patterns for all currently researched multiVaults, warranting on
 1. Reccuring `uint256 indexOfAssets` variable for any sort of id tracking (here, totalSupply of ERC1155 ids). True for underlying assets, shares, supplies & balances or even whole Vaults (ERC1155 MultiVault)
 2. Reccuring pattern of addition of another token interface through initialization in existing contract - `create()` function
 3. Reccuring pattern of creation of separate accounting calculations for different types of assets/shares. MultiVault preserves original function on ERC4626 standard Vault, namley - managmend of assets. With MultiVault it's now possible to manage all of those assets within one contract.
+
 
 ## Sample Implementation
 

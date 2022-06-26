@@ -3,7 +3,6 @@ pragma solidity >=0.8.1;
 
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {ERC1155} from "@rari-capital/solmate/src/tokens/ERC1155.sol";
-import {ERC4626} from "@rari-capital/solmate/src/mixins/ERC4626.sol";
 import {SafeTransferLib} from "@rari-capital/solmate/src/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@rari-capital/solmate/src/utils/FixedPointMathLib.sol";
 
@@ -104,7 +103,7 @@ abstract contract MultiVault is ERC1155 {
         _mint(receiver, vaultId, shares, "");
 
         // vault.totalSupply += shares;
-
+        
         emit Deposit(msg.sender, receiver, vault.asset, assets, shares);
 
         afterDeposit(vaultId, assets, shares);
@@ -163,6 +162,7 @@ abstract contract MultiVault is ERC1155 {
     }
 
     function convertToShares(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
+
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets(vaultId));
