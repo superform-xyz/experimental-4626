@@ -39,9 +39,9 @@ abstract contract MultiVault is ERC1155 {
     /// @notice Multiple vault underlying assets
     mapping(uint256 => Vault) public vaults;
 
-    /// @notice Vault Data
+    /// @notice Vault Data (Optional)
     /// @param asset underlying token of this vaultId
-    /// @param totalSupply shares tracking for each vaultId, needed for previews()
+    /// @param totalSupply shares tracking for each vaultId
     /// @param vaultData EXPERIMENTAL: additional logic to this vaultId, encoded parameters for the Vault
     struct Vault {
         ERC20 asset;
@@ -83,7 +83,7 @@ abstract contract MultiVault is ERC1155 {
 
         _mint(receiver, vaultId, shares, "");
 
-        vaults[vaultId].totalSupply += shares;
+        // vault.totalSupply += shares;
 
         emit Deposit(msg.sender, receiver, vault.asset, assets, shares);
 
@@ -103,7 +103,7 @@ abstract contract MultiVault is ERC1155 {
 
         _mint(receiver, vaultId, shares, "");
 
-        vaults[vaultId].totalSupply += shares;
+        // vault.totalSupply += shares;
 
         emit Deposit(msg.sender, receiver, vault.asset, assets, shares);
 
@@ -126,7 +126,7 @@ abstract contract MultiVault is ERC1155 {
 
         _burn(owner, vaultId, shares);
 
-        vaults[vaultId].totalSupply -= shares;
+        // vault.totalSupply -= shares;
 
         emit Withdraw(msg.sender, receiver, owner, vaultId, assets, shares);
 
@@ -147,7 +147,7 @@ abstract contract MultiVault is ERC1155 {
 
         _burn(owner, vaultId, shares);
 
-        vaults[vaultId].totalSupply -= shares;
+        // vaults[vaultId].totalSupply -= shares;
 
         emit Withdraw(msg.sender, receiver, owner, vaultId, assets, shares);
 
@@ -162,35 +162,35 @@ abstract contract MultiVault is ERC1155 {
         return vaults[vaultId].asset.balanceOf(address(this));
     }
 
-    function convertToShares(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function convertToShares(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets(vaultId));
     }
 
-    function convertToAssets(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function convertToAssets(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(vaultId), supply);
     }
 
-    function previewDeposit(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function previewDeposit(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
         return convertToShares(vaultId, assets);
     }
 
-    function previewMint(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function previewMint(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? shares : shares.mulDivUp(totalAssets(vaultId), supply);
     }
 
-    function previewWithdraw(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function previewWithdraw(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets(vaultId));
     }
 
-    function previewRedeem(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function previewRedeem(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         return convertToAssets(vaultId, shares);
     }
 

@@ -41,7 +41,7 @@ describe("Testing core MultiVault Extension", async () => {
     );
 
     const MockMultiVaultFactory = await ethers.getContractFactory("MockMultiVault");
-    MockMultiVault = await MockMultiVaultFactory.deploy(ERC20.address, vaultData);
+    MockMultiVault = await MockMultiVaultFactory.deploy(deployer.address);
     await MockMultiVault.deployed();
 
     await ERC20.mint(deployer.address, getBigNumber(1000));
