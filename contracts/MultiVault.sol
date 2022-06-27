@@ -26,7 +26,7 @@ abstract contract MultiVault is ERC1155 {
         uint256 shares
     );
 
-    event Create(ERC20 indexed asset, uint256 id, bytes vaultData);
+    event Create(ERC20 indexed asset, uint256 id);
 
     /*///////////////////////////////////////////////////////////////
                                  STORAGE
@@ -35,13 +35,13 @@ abstract contract MultiVault is ERC1155 {
     /// @notice Vault id tracking and total supply of different Vaults
     uint256 public totalSupply;
 
-    /// @notice Track vault underlying assets
+    /// @notice Multiple vault underlying assets
     mapping(uint256 => Vault) public vaults;
 
-    /// @notice Vault Data
+    /// @notice Vault Data (Optional)
     /// @param asset underlying token of this vaultId
-    /// @param totalSupply shares tracking for each vaultId, needed for previews()
-    /// @param vaultData additional logic to this vaultId, extend
+    /// @param totalSupply shares tracking for each vaultId
+    /// @param vaultData EXPERIMENTAL: additional logic to this vaultId, encoded parameters for the Vault
     struct Vault {
         ERC20 asset;
         uint256 totalSupply;
@@ -53,27 +53,17 @@ abstract contract MultiVault is ERC1155 {
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Create new Vault
-    /// @param asset underlying token of new vault
-    /// @param vaultData any encoded additional data for vault eg. metadata uri string
-    /// @dev encoded data can be anything. implementations of other functions will need to know how to decode tho.
-    function create(ERC20 asset, bytes memory vaultData) public virtual returns (uint256 id) {
+    /// @param asset new underlying token for vaultId
+    /// Can we make it as any type of underlying?
+    function create(ERC20 asset) public virtual returns (uint256 id) {
         unchecked {
             id = ++totalSupply;
         }
 
         vaults[id].asset = asset;
 
-        /// @dev Structure of this encoded data is left to the child contract, can be anything
-        /// (rewards, fees, metadata) = abi.decode(data, ([RewardsModule, FeeModule, string]))
-        vaults[id].vaultData = vaultData;
-
-        emit Create(asset, id, vaultData);
+        emit Create(asset, id);
     }
-
-    /// @notice Visbility getter for vaultData variable across multiple Vaults
-    /// SHOULD be implemented by deployer, but return types can differ so hard to enforce on interface level
-    /// MUST define its own return values if implemented. MultiVault can work internaly on bytes data fine.
-    // function previewData(uint256 vaultId) public view virtual returns();
 
     /*///////////////////////////////////////////////////////////////
                         DEPOSIT/WITHDRAWAL LOGIC
@@ -90,9 +80,9 @@ abstract contract MultiVault is ERC1155 {
 
         vault.asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, vaultId, shares, vaults[vaultId].vaultData);
+        _mint(receiver, vaultId, shares, "");
 
-        vaults[vaultId].totalSupply += shares;
+        // vault.totalSupply += shares;
 
         emit Deposit(msg.sender, receiver, vault.asset, assets, shares);
 
@@ -110,10 +100,10 @@ abstract contract MultiVault is ERC1155 {
 
         vault.asset.safeTransferFrom(msg.sender, address(this), assets);
 
-        _mint(receiver, vaultId, shares, vaults[vaultId].vaultData);
+        _mint(receiver, vaultId, shares, "");
 
-        vaults[vaultId].totalSupply += shares;
-
+        // vault.totalSupply += shares;
+        
         emit Deposit(msg.sender, receiver, vault.asset, assets, shares);
 
         afterDeposit(vaultId, assets, shares);
@@ -135,7 +125,7 @@ abstract contract MultiVault is ERC1155 {
 
         _burn(owner, vaultId, shares);
 
-        vaults[vaultId].totalSupply -= shares;
+        // vault.totalSupply -= shares;
 
         emit Withdraw(msg.sender, receiver, owner, vaultId, assets, shares);
 
@@ -156,7 +146,7 @@ abstract contract MultiVault is ERC1155 {
 
         _burn(owner, vaultId, shares);
 
-        vaults[vaultId].totalSupply -= shares;
+        // vaults[vaultId].totalSupply -= shares;
 
         emit Withdraw(msg.sender, receiver, owner, vaultId, assets, shares);
 
@@ -171,35 +161,36 @@ abstract contract MultiVault is ERC1155 {
         return vaults[vaultId].asset.balanceOf(address(this));
     }
 
-    function convertToShares(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function convertToShares(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
+
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets(vaultId));
     }
 
-    function convertToAssets(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function convertToAssets(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(vaultId), supply);
     }
 
-    function previewDeposit(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function previewDeposit(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
         return convertToShares(vaultId, assets);
     }
 
-    function previewMint(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function previewMint(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? shares : shares.mulDivUp(totalAssets(vaultId), supply);
     }
 
-    function previewWithdraw(uint256 vaultId, uint256 assets) public view returns (uint256) {
+    function previewWithdraw(uint256 vaultId, uint256 assets) public view virtual returns (uint256) {
         uint256 supply = vaults[vaultId].totalSupply;
 
         return supply == 0 ? assets : assets.mulDivUp(supply, totalAssets(vaultId));
     }
 
-    function previewRedeem(uint256 vaultId, uint256 shares) public view returns (uint256) {
+    function previewRedeem(uint256 vaultId, uint256 shares) public view virtual returns (uint256) {
         return convertToAssets(vaultId, shares);
     }
 
