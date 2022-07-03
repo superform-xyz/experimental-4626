@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity >=0.8.1;
 
-import {MultiVault} from "./MultiVault.sol";
-import {IERC4626} from "./interface/IERC4626.sol";
+import {MultiVault} from "../MultiVault.sol";
+import {IERC4626} from "../interface/IERC4626.sol";
 import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
 import {SafeTransferLib} from "@rari-capital/solmate/src/utils/SafeTransferLib.sol";
 import {FixedPointMathLib} from "@rari-capital/solmate/src/utils/FixedPointMathLib.sol";
@@ -23,16 +23,15 @@ contract MockMultiVault is MultiVault {
     /// @notice mapped to vaultId indirectly, yield generating strategy (ERC4626 here)
     mapping(uint256 => IERC4626) public vaultStrategy;
 
-    /// @notice Access control over strategy managment and new underlying creation
-    address public governance;
+    /// @notice Access control over new underlying creation
+    address public auth;
 
-    modifier onlyGov() {
-        require(msg.sender == governance, "dao");
+    modifier Authorized() {
+        require(msg.sender == auth, "auth");
         _;
     }
-
-    constructor(address gov) {
-        governance = gov;
+    constructor(address _auth) {
+        auth = _auth;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -41,27 +40,30 @@ contract MockMultiVault is MultiVault {
 
     /// @notice Create new underlying token for MultiVault
     /// @param asset address of new ERC20 underlying
-    function create(ERC20 asset) public override onlyGov returns (uint256 id) {
+    function create(ERC20 asset) public override Authorized returns (uint256 id) {
         id = super.create(asset);
     }
 
     /// @notice Add strategy to the multiVault. Here, ERC4626 standard yield bearing Vault
     /// @param strategy address of ERC4626 strategy to which underlying will be moved
-    function set(IERC4626 strategy) public onlyGov {
+    function set(IERC4626 strategy) public Authorized {
         ++strategyId;
         vaultStrategy[strategyId] = strategy;
     }
 
     /// @notice Activate strategyId for vaultId. Indirect mapping between stratId and vaultId.
-    /// Activate only if no funds require moving from the old Strategy. If they do, call move() first!
+    /// @dev Activate only if no funds require moving from the old Strategy. If they do, call move() first!
     /// @param vaultId vaultId for which strategy is activated
     /// @param stratId id of strategy for vault
-    function activate(uint256 vaultId, uint256 stratId) public onlyGov {
+    function activate(uint256 vaultId, uint256 stratId) public Authorized {
         vaults[vaultId].vaultData = abi.encode(vaultStrategy[stratId]);
         vaults[vaultId].asset.approve(address(vaultStrategy[stratId]), type(uint256).max);
     }
 
-    function move(uint256 vaultId, uint256 newStrat) public onlyGov {
+    /// @notice Move funds from one Strategy to the other
+    /// @param vaultId read current Strategy set for this vaultId and withdraw from to this contract
+    /// @param newStrat activate new Strategy, set earlier and deposit to it (underlying must match!)
+    function move(uint256 vaultId, uint256 newStrat) public Authorized {
         uint256 stratBalance = totalAssets(vaultId);
         currentStrategy(vaultId).withdraw(stratBalance, address(this), address(this));
         activate(vaultId, newStrat);
@@ -77,10 +79,16 @@ contract MockMultiVault is MultiVault {
                            METAVAULTS ROUTING
     //////////////////////////////////////////////////////////////*/
 
-    function batchDeposit(uint256[] memory vaultIds, uint256[] memory assets) public {}
+    /// @dev WIP: Could be used for re-adjusting multiple Strategies positions in conjuction with Router
+    function batchDepositTo(uint256[] memory vaultIds0, uint256[] memory assets0) internal {}
 
-    function batchWithdraw(uint256[] memory vaultIds, uint256[] memory assets) public {}
+    function batchWithdrawFrom(uint256[] memory vaultIds0, uint256[] memory assets0) internal {}
 
+    function routeTo(uint256 from, uint256 fAsset, uint256 to, uint256 tAsset) internal {}
+
+    function routeFrom(uint256 from, uint256 fAsset, uint256 to, uint256 tAsset) internal {}
+
+    /// @notice After owner deposits underlying, underlying is moved to one of existing Strategies
     function afterDeposit(
         uint256 vaultId,
         uint256 assets,
@@ -89,6 +97,8 @@ contract MockMultiVault is MultiVault {
         currentStrategy(vaultId).deposit(assets, address(this));
     }
 
+    /// @notice After owner calls withdraw, underlying is withdraw from the current Strategy and sent to this contract
+    /// @dev actual redemption happens in MultiVault
     function beforeWithdraw(
         uint256 vaultId,
         uint256 assets,

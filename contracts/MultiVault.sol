@@ -39,14 +39,29 @@ abstract contract MultiVault is ERC1155 {
     mapping(uint256 => Vault) public vaults;
 
     /// @notice Vault Data (Optional)
-    /// @param asset underlying token of this vaultId
-    /// @param totalSupply shares tracking for each vaultId
-    /// @param vaultData EXPERIMENTAL: additional logic to this vaultId, encoded parameters for the Vault
+    /// @param asset underlying token of this vaultId / REQUIRED
+    /// @param totalSupply shares tracking for each vaultId / OPTIONAL
+    /// @param vaultData experimental - additional data for vaultId / OPTIONAL
+    /// @dev vaultData is useful when additional logic for vaultId is needed.
+    /// @dev ensures that whatever is vaultData, it maps to Vault, allowing to extend it further.
+    /// @dev If only struct could be overriden[1] (even if mapping as public state var vaults is)
+    /// @dev vaultData wouldn't be needed. inheriting contract would define types.
+    /// @dev however, even then, we need reliable and stable implementation of Vault struct
+    /// @dev totalSupply and vaultData provide all extended operability 
+    /// @dev at the same time being optional - keeping interface consitent
+    /// @dev downside is vaultData actual value is left to be deduced
+    /// @dev if implementer isn't dilligent. with current solidity limitations[1]
+    /// @dev best to enocde vaultData with only ONE variable for clarity of decode
     struct Vault {
         ERC20 asset;
         uint256 totalSupply;
         bytes vaultData;
     }
+
+    /// @notice [1] We currently can't override 
+    /// https://github.com/ethereum/solidity/issues/6337#issuecomment-1140000320
+    /// https://github.com/ethereum/solidity/issues/11826#issuecomment-902835510
+    /// https://github.com/ethereum/solidity/issues/8489#issuecomment-598685028
 
     /*///////////////////////////////////////////////////////////////
                             MULTIVAULT LOGIC
@@ -54,7 +69,6 @@ abstract contract MultiVault is ERC1155 {
 
     /// @notice Create new Vault
     /// @param asset new underlying token for vaultId
-    /// Can we make it as any type of underlying?
     function create(ERC20 asset) public virtual returns (uint256 id) {
         unchecked {
             id = ++totalSupply;
@@ -63,6 +77,11 @@ abstract contract MultiVault is ERC1155 {
         vaults[id].asset = asset;
 
         emit Create(asset, id);
+    }
+
+    /// @notice Optional getter
+    function getVault(uint256 vaultId) public virtual returns (Vault memory) {
+        return abi.decode(vaults[vaultId].vaultData, (Vault));
     }
 
     /*///////////////////////////////////////////////////////////////

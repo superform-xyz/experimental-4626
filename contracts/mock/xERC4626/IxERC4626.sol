@@ -5,6 +5,7 @@ pragma solidity >=0.8.1;
 
 import {ERC4626} from "@rari-capital/solmate/src/mixins/ERC4626.sol";
 import {SafeCastLib} from "@rari-capital/solmate/src/utils/SafeCastLib.sol";
+import {IERC4626} from "../../interface/xIERC4626.sol";
 
 /** 
  @title  An xERC4626 Single Staking Contract Interface
@@ -15,7 +16,7 @@ import {SafeCastLib} from "@rari-capital/solmate/src/utils/SafeCastLib.sol";
 
          Operates on "cycles" which distribute the rewards surplus over the internal balance to users linearly over the remainder of the cycle window.
 */
-interface IxERC4626 {
+interface IxERC4626 is IERC4626 {
     /*////////////////////////////////////////////////////////
                         Custom Errors
     ////////////////////////////////////////////////////////*/
