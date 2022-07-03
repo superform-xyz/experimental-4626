@@ -12,18 +12,18 @@ ERC4626 currently only operates on one underlying token, minting in return one E
 
 Found reccuring patterns hold true across many non-4626 Vaults and can be accomodated with small logical changes to the existing ERC4626 interface while still keeping extension intuitive for developers already working with ERC4626. To that, we demonstrate alpha version of `MultiCore.sol` implementation contract, utilizing our proposed `MultiVault.sol` extension of the ERC4626.
 
-The standardization of multiple underlying tokens within a single ERC4626 vault is an object of on-going research for most uniform proposition (refer to `research` directory). For the time being we present prototype of potential extension to the ERC4626 focused on accounting operations within single contract for multiple Vault assets.
-
 ### Changes to ERC4626:
 
 - ERC1155 as shares / lp token for Vault
+  - access to batch operations and one time approval
 - `totalSupply` of vaultIds (ERC1155 id)
 - separate operation logic for each underlying within one `MultiVault`
   - each `vaultId` has it's own underlying and additional data params (`vaultData` is suppose to be very flexible without breaking)
 - `create(ERC20 asset)` function to add new vault within core vault contract
-- `previewData(uint256 vaultId)` optional function for reading decoded vaultData
-  - implementation of this function can have an effect inside of `afterDeposit()` or `beforeWithdraw()` functions, e.g _do something specific based on `vaultData` after deposit_.
-  - parent contract can extend this logic as it sees fit. interface assumes that each vault has data, empty state may just be omitted.
+- `struct Vault` data structure to hold vital information for `vaultId` (Vault)
+  - `ERC20 asset` underlying token for `vaultId`
+  - `uint256 totalSupply` total supply of *shares* for `vaultId`. can be left at 0 if not used by implementation.
+  - `bytes vaultData` additional data held for `vaultId`, e.g interface of contract for use inside of `afterDeposit()`. Or, any other value. Idea is to map additional logic, implemented by inheriting contract to `vaultId` of `MultiVault`. for clarity, it should decode to single variable and implementer should take care of providing appropriate getters.
 
 _Disclaimer: Exploratory work and designs. Interface standarization is work in progress_
 
